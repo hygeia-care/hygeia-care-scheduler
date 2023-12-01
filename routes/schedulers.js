@@ -1,6 +1,8 @@
 var express = require('express');
 var moment = require('moment');
 var router = express.Router();
+var debug = require('debug')('contacts-2:server');
+var Scheduler = require('../models/scheduler')
 
 var schedulers = [
   {
@@ -35,13 +37,47 @@ var schedulers = [
   },
 ]
 /* GET schedulers listing. */
-router.get('/', function(req, res, next) {
-  res.send(schedulers);
+router.get('/', async function(req, res, next) {
+  try {
+    const result = await Scheduler.find();
+    res.send(result.map((c) => c.cleanup()));
+  } catch(e) {
+    // debug("DB problem", e);
+    console.error(e);
+    res.sendStatus(500);
+  }
+});
+
+/* POST contact  */
+router.post('/', async function(req, res, next) {
+  const {name, lastname, date, email} = req.body;
+
+  const scheduler = new Scheduler({
+    name,
+    lastname,
+    date,
+    email
+  });
+  try {
+    await scheduler.save();
+    res.sendStatus(201);
+  } catch (e) {
+    if (e.errors) {
+      debug("Validation problem when saving");
+      res.status(400).send({error: e.message});
+    } else {
+      debug("DB problem", e);
+      res.sendStatus(500);
+    }
+  }
 });
 
 /* GET schedulers name lastname doctors. */
-router.get('/doctors', function(req, res, next) {
+router.get('/doctors', async function(req, res, next) {
   try {
+    // Obtener todos los documentos de Scheduler
+    const schedulers = await Scheduler.find();
+
     // Obtener emails únicos
     const emailsUnicos = Array.from(new Set(schedulers.map(usuario => usuario.email)));
 
@@ -50,9 +86,9 @@ router.get('/doctors', function(req, res, next) {
 
     // Iterar sobre los emails únicos y buscar el nombre asociado a cada uno
     for (const email of emailsUnicos) {
-      const usuario = schedulers.find(item => item.email === email);
+      const usuario = await Scheduler.find(item => item.email === email);
       if (usuario) {
-        nombresPorEmail["doctors"].push(usuario.name + '' + usuario.lastname);
+        nombresPorEmail["doctors"].push(usuario.name + ' ' + usuario.lastname);
       }
     }
 
@@ -65,10 +101,10 @@ router.get('/doctors', function(req, res, next) {
 });
 
 /* GET schedulers/dates/:name/:lastname */
-router.get('/dates/:name/:lastname', function(req, res, next) {
+router.get('/dates/:name/:lastname', async function(req, res, next) {
   var name = req.params.name;
   var lastname = req.params.lastname;
-  var results = schedulers.filter(c => {
+  var results = await Scheduler.filter(c => {
     return c.name === name && c.lastname === lastname;
   });
   if(results) {

@@ -1,0 +1,14 @@
+build:
+  scheduler:
+    context: .
+
+deploy:
+  - helm upgrade --install scheduler chart
+    --set scheduler.image=${OKTETO_BUILD_SCHEDULER_IMAGE}
+    --set schedulerMongoUrl=$SCHEDULER_DB_URL
+
+dev:
+  scheduler:
+    command: npm start
+    sync:
+      - .:/app

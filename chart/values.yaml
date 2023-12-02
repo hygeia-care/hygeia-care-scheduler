@@ -1,0 +1,4 @@
+contacts:
+  replicaCount: 1
+
+contactsMongoUrl: mongodb://mongo/test

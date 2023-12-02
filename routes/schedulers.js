@@ -86,7 +86,9 @@ router.get('/doctors', async function(req, res, next) {
 
     // Iterar sobre los emails únicos y buscar el nombre asociado a cada uno
     for (const email of emailsUnicos) {
-      const usuario = await Scheduler.find(item => item.email === email);
+      // Usar findOne para buscar un usuario por su correo electrónico
+      const usuario = await Scheduler.findOne({ email: email });
+
       if (usuario) {
         nombresPorEmail["doctors"].push(usuario.name + ' ' + usuario.lastname);
       }
@@ -100,28 +102,46 @@ router.get('/doctors', async function(req, res, next) {
   }
 });
 
+
 /* GET schedulers/dates/:name/:lastname */
 router.get('/dates/:name/:lastname', async function(req, res, next) {
-  var name = req.params.name;
-  var lastname = req.params.lastname;
-  var results = await Scheduler.filter(c => {
-    return c.name === name && c.lastname === lastname;
-  });
-  if(results) {
-    results.sort((a, b) => {
-      const dateA = moment(a.date).toDate();
-      const dateB = moment(b.date).toDate();
-      return dateA - dateB;
-    });
-    results.forEach(result => {
-      const momentDate = moment(result.date);
-      result.date = momentDate.format('YYYY-MM-DD'); // Fecha en formato YYYY-MM-DD
-      result.time = momentDate.format('HH:mm:ss'); // Hora en formato HH:MM:SS
-    });
-    res.send({results});
-  } else {
-    res.sendStatus(404);
+  try {
+    const name = req.params.name;
+    const lastname = req.params.lastname;
+
+    // Utilizar Mongoose find con un objeto de consulta
+    const results = await Scheduler.find({ name: name, lastname: lastname });
+
+    if (results && results.length > 0) {
+      // Ordenar los resultados por fecha
+      results.sort((a, b) => {
+        const dateA = moment(a.date).toDate();
+        const dateB = moment(b.date).toDate();
+        return dateA - dateB;
+      });
+
+      // Formatear fecha y hora
+      const formattedResults = results.map(result => {
+        const momentDate = moment(result.date);
+        return {
+          name: result.name,
+          lastname: result.lastname,
+          date: momentDate.format('YYYY-MM-DD'),
+          time: momentDate.format('HH:mm:ss'),
+          email: result.email
+        };
+      });
+
+      // Enviar los resultados formateados
+      res.send(formattedResults);
+    } else {
+      res.sendStatus(404);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al buscar fechas.' });
   }
 });
+
 
 module.exports = router;

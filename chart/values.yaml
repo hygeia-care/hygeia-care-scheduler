@@ -1,4 +1,4 @@
-contacts:
+scheduler:
   replicaCount: 1
 
-contactsMongoUrl: mongodb://mongo/test
+schedulerMongoUrl: mongodb://mongo/test

@@ -40,6 +40,7 @@ var schedulers = [
 router.get('/', async function(req, res, next) {
   try {
     const result = await Scheduler.find();
+    console.log(result)
     res.send(result.map((c) => c.cleanup()));
   } catch(e) {
     // debug("DB problem", e);
@@ -71,6 +72,28 @@ router.post('/', async function(req, res, next) {
     }
   }
 });
+
+/* DELETE contact by ID */
+router.delete('/:id', async function(req, res, next) {
+  const idDoctor = req.params.id;
+
+  try {
+    // Intenta eliminar el contacto por su ID
+    const result = await Scheduler.deleteOne({ _id: idDoctor });
+    if (result.deletedCount > 0) {
+      // Si se eliminó al menos un documento, responde con un código 204 (No Content)
+      res.sendStatus(204);
+    } else {
+      // Si no se eliminó ningún documento (porque el ID no se encontró), responde con un código 404 (Not Found)
+      res.sendStatus(404);
+    }
+  } catch (e) {
+    // Error al intentar eliminar el contacto
+    console.error("DB problem", e);
+    res.sendStatus(500);
+  }
+});
+
 
 /* GET schedulers name lastname doctors. */
 router.get('/doctors', async function(req, res, next) {

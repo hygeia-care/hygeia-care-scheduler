@@ -149,7 +149,8 @@ router.get('/dates/:name/:lastname', async function(req, res, next) {
         return {
           name: result.name,
           lastname: result.lastname,
-          date: momentDate.format('YYYY-MM-DD'),
+          date: result.date,
+          day: momentDate.format('YYYY-MM-DD'),
           time: momentDate.format('HH:mm:ss'),
           email: result.email
         };

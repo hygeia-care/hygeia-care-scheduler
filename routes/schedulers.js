@@ -1,7 +1,7 @@
 var express = require('express');
 var moment = require('moment');
 var router = express.Router();
-var debug = require('debug')('contacts-2:server');
+var debug = require('debug')('scheduler-2:server');
 var Scheduler = require('../models/scheduler')
 
 var schedulers = [
@@ -49,7 +49,7 @@ router.get('/', async function(req, res, next) {
   }
 });
 
-/* POST contact  */
+/* POST scheduler  */
 router.post('/', async function(req, res, next) {
   const {name, lastname, date, email} = req.body;
 
@@ -73,7 +73,7 @@ router.post('/', async function(req, res, next) {
   }
 });
 
-/* DELETE contact by ID */
+/* DELETE scheduler by ID */
 router.delete('/:id', async function(req, res, next) {
   const idDoctor = req.params.id;
 

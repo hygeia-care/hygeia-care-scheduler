@@ -8,14 +8,21 @@
   "homepage": "https://github.com/hygeia-care/hygeia-care-scheduler",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "test": "jest"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
     "debug": "~2.6.9",
     "express": "^4.18.2",
     "moment": "^2.29.4",
     "mongoose": "^8.0.2",
     "morgan": "~1.9.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-extended": "^4.0.2",
+    "supertest": "^6.3.4"
   }
 }

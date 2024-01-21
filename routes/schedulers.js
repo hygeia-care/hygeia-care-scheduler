@@ -36,6 +36,24 @@ var schedulers = [
     "email": "juan@hygeia-care.us"
   },
 ]
+
+/*  POST email */
+
+router.post('/email', async function(req, res, next) {
+  const {email, date} = req.body;
+  try {
+    resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: datosUser.data.email,
+      subject: 'Cita Registrada',
+      html: '<p>Tienes una cita: <strong>'+ date +'</strong>.</p>'
+    });
+  } catch (e) {
+      debug("Validation problem when saving");
+      res.status(400).send({error: e.message});
+  }
+});
+
 /* GET schedulers listing. */
 router.get('/', async function(req, res, next) {
   try {

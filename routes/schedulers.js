@@ -48,10 +48,12 @@ router.post('/email', async function(req, res, next) {
   try {
     resend.emails.send({
       from: 'onboarding@resend.dev',
-      to: datosUser.data.email,
+      to: email,
       subject: 'Cita Registrada',
       html: '<p>Tienes una cita: <strong>'+ date +'</strong>.</p>'
     });
+
+    res.sendStatus(201);
   } catch (e) {
       debug("Validation problem when saving");
       res.status(400).send({error: e.message});

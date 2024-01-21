@@ -2,7 +2,11 @@ var express = require('express');
 var moment = require('moment');
 var router = express.Router();
 var debug = require('debug')('scheduler-2:server');
-var Scheduler = require('../models/scheduler')
+var Scheduler = require('../models/scheduler');
+
+const { Resend } = require('resend');
+
+const resend = new Resend('re_3AmhcDUK_CLy3CYa2SEVkDkXzxL2S3wNV');
 
 var schedulers = [
   {

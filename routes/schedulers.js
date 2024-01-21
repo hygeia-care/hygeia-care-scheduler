@@ -2,7 +2,11 @@ var express = require('express');
 var moment = require('moment');
 var router = express.Router();
 var debug = require('debug')('scheduler-2:server');
-var Scheduler = require('../models/scheduler')
+var Scheduler = require('../models/scheduler');
+
+const { Resend } = require('resend');
+
+const resend = new Resend('re_3AmhcDUK_CLy3CYa2SEVkDkXzxL2S3wNV');
 
 var schedulers = [
   {
@@ -36,6 +40,24 @@ var schedulers = [
     "email": "juan@hygeia-care.us"
   },
 ]
+
+/*  POST email */
+
+router.post('/email', async function(req, res, next) {
+  const {email, date} = req.body;
+  try {
+    resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: 'gl0069081@gmail.com',//datosUser.data.email
+      subject: 'Cita Registrada',
+      html: '<p>Tienes una cita: <strong>'+ date +'</strong>!</p>'
+    });
+  } catch (e) {
+      debug("Validation problem when saving");
+      res.status(400).send({error: e.message});
+  }
+});
+
 /* GET schedulers listing. */
 router.get('/', async function(req, res, next) {
   try {

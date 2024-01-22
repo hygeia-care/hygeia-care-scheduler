@@ -73,19 +73,34 @@ router.get('/', async function(req, res, next) {
   }
 });
 
+
 /* POST scheduler  */
 router.post('/', async function(req, res, next) {
   const {name, lastname, date, email} = req.body;
 
-  const scheduler = new Scheduler({
-    name,
-    lastname,
-    date,
-    email
-  });
+  
   try {
+    const existingScheduler = await Scheduler.findOne({
+      name,
+      lastname,
+      date,
+      email
+    });
+    if(existingScheduler){
+      debug("Duplicate scheduler detected");
+      return res.status(409).send({ error: "Duplicate scheduler detected" });
+    }
+    
+    const scheduler = new Scheduler({
+      name,
+      lastname,
+      date,
+      email
+    });
+
     await scheduler.save();
     res.sendStatus(201);
+
   } catch (e) {
     if (e.errors) {
       debug("Validation problem when saving");
@@ -93,6 +108,31 @@ router.post('/', async function(req, res, next) {
     } else {
       debug("DB problem", e);
       res.sendStatus(500);
+    }
+  }
+});
+
+// EDIT scheduler by ID
+router.put('/:id', async function(req, res, next) {
+  const schedulerId = req.params.id;
+  const updateData = req.body;
+
+  try {
+    const result = await Scheduler.findByIdAndUpdate(schedulerId, updateData, { new: true });
+
+    if (!result) {
+      return res.status(404).send("Scheduler not found");
+    }
+
+    res.send(result.cleanup()); 
+  } catch(e) {
+    
+    if (e.errors) {
+      debug("Validation problem when updating scheduler");
+      return res.status(400).send({ error: e.message });
+    } else {
+      debug("DB problem", e);
+      return res.sendStatus(500);
     }
   }
 });
@@ -142,10 +182,15 @@ router.get('/doctors', async function(req, res, next) {
     }
 
     // Devolver el objeto con nombres asociados a cada email en formato JSON
-    res.json(nombresPorEmail);
+    if(nombresPorEmail.length > 0){
+      res.status(200).json(nombresPorEmail);
+    }else{
+      res.status(404).json({ error: 'Error al buscar por email y guardar nombres.' });
+    }
+    
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al buscar por email y guardar nombres.' });
+    res.sendStatus(500);
   }
 });
 
@@ -183,11 +228,27 @@ router.get('/dates/:name/:lastname', async function(req, res, next) {
       // Enviar los resultados formateados
       res.send(formattedResults);
     } else {
-      res.sendStatus(404);
+      res.sendStatus(404).json({ error: 'Error al buscar fechas.' });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al buscar fechas.' });
+    res.sendStatus(500);
+  }
+});
+
+//DELETE ALL SCHEDULERS
+router.delete('/', async (req, res) => {
+  try {
+    const result = await Scheduler.deleteMany({});
+
+    if (result.deletedCount > 0) {
+      res.status(200).json({ message: 'All schedulers successfully deleted' });
+    } else {
+      res.status(404).json({ error: 'No schedulers found' });
+    }
+  } catch (e) {
+    debug("DB problem", e);
+    res.sendStatus(500);
   }
 });
 

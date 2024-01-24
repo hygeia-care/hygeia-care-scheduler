@@ -11,6 +11,7 @@ COPY bin/ ./bin
 COPY public/ ./public
 COPY routes/ ./routes
 COPY models/ ./models
+COPY tests/ ./tests
 COPY app.js .
 
 EXPOSE 3336

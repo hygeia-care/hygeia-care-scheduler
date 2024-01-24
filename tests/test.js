@@ -26,7 +26,7 @@ describe("Scheduler API", () => {
                 "email": "doctor2@hygeia-care.us"
             }),
         ];
-
+        
         var dbFind;
 
         beforeEach(() => {

@@ -4,6 +4,7 @@ var router = express.Router();
 var debug = require('debug')('scheduler-2:server');
 var Scheduler = require('../models/scheduler');
 var verifyJWTToken = require('../verifyJWTToken');
+var appointmentsService = require('../services/appointmentsService');
 
 const { Resend } = require('resend');
 
@@ -210,46 +211,51 @@ router.delete('/:id', async function(req, res, next) {
 
 /* GET schedulers name lastname doctors. */
 router.get('/doctors', async function(req, res, next) {
-
+  
   try {
     await verifyJWTToken.verifyToken(req, res, next);
   } catch (e){
     console.error(e);
     return true;
   }
-
+  
   try {
-    // Obtener todos los documentos de Scheduler
     const schedulers = await Scheduler.find();
-
-    // Obtener emails únicos
     const emailsUnicos = Array.from(new Set(schedulers.map(usuario => usuario.email)));
+    const appointments = await appointmentsService.getAppointment();
+    const datosPorEmail = { doctors: {} };
 
-    // Inicializar un objeto para almacenar nombres asociados a cada email
-    const nombresPorEmail = {"doctors":[]};
-
-    // Iterar sobre los emails únicos y buscar el nombre asociado a cada uno
     for (const email of emailsUnicos) {
-      // Usar findOne para buscar un usuario por su correo electrónico
+      
       const usuario = await Scheduler.findOne({ email: email });
-
+      
       if (usuario) {
-        nombresPorEmail["doctors"].push(usuario.name + ' ' + usuario.lastname);
+        const appointmentsDoctor = appointments.filter(appointment =>
+          appointment.nameDoctor === usuario.name && appointment.lastnameDoctor === usuario.lastname
+        );
+
+        const nombreCompleto = usuario.name + ' ' + usuario.lastname;
+        
+        datosPorEmail.doctors[nombreCompleto] = {
+          name: usuario.name,
+          lastname: usuario.lastname,
+          email: usuario.email,
+          appointments: appointmentsDoctor
+        };
       }
     }
 
-    // Devolver el objeto con nombres asociados a cada email en formato JSON
-    if(nombresPorEmail.length > 0){
-      res.status(200).json(nombresPorEmail);
-    }else{
-      res.status(404).json({ error: 'Error al buscar por email y guardar nombres.' });
+    if (Object.keys(datosPorEmail.doctors).length > 0) {
+      res.status(200).json(datosPorEmail);
+    } else {
+      res.status(404).json({ error: 'No se encontraron datos para los doctores.' });
     }
-    
   } catch (error) {
     console.error(error);
-    res.sendStatus(500);
+    res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
+
 
 
 /* GET schedulers/dates/:name/:lastname */

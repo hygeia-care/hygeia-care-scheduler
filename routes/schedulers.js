@@ -3,6 +3,7 @@ var moment = require('moment');
 var router = express.Router();
 var debug = require('debug')('scheduler-2:server');
 var Scheduler = require('../models/scheduler');
+var verifyJWTToken = require('../verifyJWTToken');
 
 const { Resend } = require('resend');
 
@@ -44,6 +45,15 @@ var schedulers = [
 /*  POST email */
 
 router.post('/email', async function(req, res, next) {
+
+  try {
+    await verifyJWTToken.verifyToken(req, res, next);
+  } catch (e){
+    console.error(e);
+    return true;
+  }
+
+
   const {email, date} = req.body;
   try {
     resend.emails.send({
@@ -55,13 +65,26 @@ router.post('/email', async function(req, res, next) {
 
     res.sendStatus(201);
   } catch (e) {
+    if (e.errors) {
       debug("Validation problem when saving");
       res.status(400).send({error: e.message});
+    } else {
+      debug("DB problem - post schedulers", e);
+      res.sendStatus(500);
+    }
   }
 });
 
 /* GET schedulers listing. */
 router.get('/', async function(req, res, next) {
+
+  try {
+    await verifyJWTToken.verifyToken(req, res, next);
+  } catch (e){
+    console.error(e);
+    return true;
+  }
+
   try {
     const result = await Scheduler.find();
     console.log(result)
@@ -78,7 +101,14 @@ router.get('/', async function(req, res, next) {
 router.post('/', async function(req, res, next) {
   const {name, lastname, date, email} = req.body;
 
-  
+  try {
+    await verifyJWTToken.verifyToken(req, res, next);
+  } catch (e){
+    console.error(e);
+    return true;
+  }
+
+
   try {
     const existingScheduler = await Scheduler.findOne({
       name,
@@ -118,21 +148,29 @@ router.put('/:id', async function(req, res, next) {
   const updateData = req.body;
 
   try {
+    await verifyJWTToken.verifyToken(req, res, next);
+  } catch (e){
+    console.error(e);
+    return true;
+  }
+
+  try {
     const result = await Scheduler.findByIdAndUpdate(schedulerId, updateData, { new: true });
 
-    if (!result) {
-      return res.status(404).send("Scheduler not found");
+    if (result) {
+      res.status(200).json({ message: 'Scheduler successfully updated', result });
+    }else{
+      res.status(404).json({ error: 'Scheduler not found' });
     }
-
-    res.send(result.cleanup()); 
+    
   } catch(e) {
     
     if (e.errors) {
       debug("Validation problem when updating scheduler");
-      return res.status(400).send({ error: e.message });
+      res.status(400).send({ error: e.message });
     } else {
       debug("DB problem", e);
-      return res.sendStatus(500);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 });
@@ -142,25 +180,44 @@ router.delete('/:id', async function(req, res, next) {
   const idDoctor = req.params.id;
 
   try {
+    await verifyJWTToken.verifyToken(req, res, next);
+  } catch (e){
+    console.error(e);
+    return true;
+  }
+
+  try {
     // Intenta eliminar el contacto por su ID
     const result = await Scheduler.deleteOne({ _id: idDoctor });
     if (result.deletedCount > 0) {
       // Si se eliminó al menos un documento, responde con un código 204 (No Content)
-      res.sendStatus(204);
+      res.status(200).json({ message: 'Scheduler successfully deleted' });
     } else {
       // Si no se eliminó ningún documento (porque el ID no se encontró), responde con un código 404 (Not Found)
-      res.sendStatus(404);
+      res.status(404).json({ error: 'Scheduler not found'});
     }
   } catch (e) {
-    // Error al intentar eliminar el contacto
-    console.error("DB problem", e);
-    res.sendStatus(500);
+    if (e.errors) {
+      debug("Validation problem when saving");
+      res.status(400).send({error: e.message});
+    } else {
+      console.log("DB problem - delete scheduler", e);
+      res.sendStatus(500);
+    }
   }
 });
 
 
 /* GET schedulers name lastname doctors. */
 router.get('/doctors', async function(req, res, next) {
+
+  try {
+    await verifyJWTToken.verifyToken(req, res, next);
+  } catch (e){
+    console.error(e);
+    return true;
+  }
+
   try {
     // Obtener todos los documentos de Scheduler
     const schedulers = await Scheduler.find();
@@ -197,6 +254,14 @@ router.get('/doctors', async function(req, res, next) {
 
 /* GET schedulers/dates/:name/:lastname */
 router.get('/dates/:name/:lastname', async function(req, res, next) {
+
+  try {
+    await verifyJWTToken.verifyToken(req, res, next);
+  } catch (e){
+    console.error(e);
+    return true;
+  }
+
   try {
     const name = req.params.name;
     const lastname = req.params.lastname;
@@ -238,6 +303,14 @@ router.get('/dates/:name/:lastname', async function(req, res, next) {
 
 //DELETE ALL SCHEDULERS
 router.delete('/', async (req, res) => {
+  
+  try {
+    await verifyJWTToken.verifyToken(req, res, next);
+  } catch (e){
+    console.error(e);
+    return true;
+  }
+
   try {
     const result = await Scheduler.deleteMany({});
 
